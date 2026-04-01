@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>University Universe</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f4f8;
+      color: #333;
+      text-align: center;
+    }
+    header {
+      background: linear-gradient(135deg, #4a90e2, #50e3c2);
+      color: white;
+      padding: 80px 20px;
+    }
+    h1 { font-size: 3em; margin-bottom: 10px; }
+    p { font-size: 1.2em; margin-bottom: 30px; }
+    .btn {
+      display: inline-block;
+      margin: 10px;
+      padding: 15px 30px;
+      border-radius: 50px;
+      text-decoration: none;
+      color: white;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+    .btn-primary { background: #ff6b6b; }
+    .btn-primary:hover { background: #ff4757; }
+    .btn-secondary { background: #4a90e2; }
+    .btn-secondary:hover { background: #357ab8; }
+    section { padding: 60px 20px; }
+    h2 { color: #4a90e2; font-size: 2.5em; margin-bottom: 20px; }
+    .feature { display: inline-block; background: white; padding: 20px; margin: 15px; border-radius: 15px; box-shadow: 0 6px 15px rgba(0,0,0,0.1); transition: 0.3s; width: 280px; }
+    .feature:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
+    .feature h3 { color: #ff6b6b; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>University Universe</h1>
+  <p>Your hub for educational tools, study guides, and resources</p>
+  <a href="#tools" class="btn btn-primary">Explore Tools</a>
+  <a href="#guides" class="btn btn-secondary">Study Guides</a>
+</header>
+
+<section id="tools">
+  <h2>Our Tools</h2>
+  <div class="feature">
+    <h3>Exam Calculator</h3>
+    <p>Quickly calculate scores and track progress.</p>
+  </div>
+  <div class="feature">
+    <h3>Planner</h3>
+    <p>Organize your study schedule efficiently.</p>
+  </div>
+  <div class="feature">
+    <h3>Quiz Bank</h3>
+    <p>Practice with hundreds of questions.</p>
+  </div>
+</section>
+
+<section id="guides">
+  <h2>Study Guides</h2>
+  <p>Download notes, past questions, and tutorials from top universities.</p>
+</section>
+
+<section id="contact">
+  <h2>Contact Us</h2>
+  <p>Questions or suggestions? Reach out anytime!</p>
+  <button id="contactBtn" class="btn btn-primary">Click Me</button>
+</section>
+
+<script>
+  document.getElementById('contactBtn').addEventListener('click', function() {
+    alert("Thanks for reaching out! We'll contact you soon.");
+  });
+</script>
+
+</body>
+</html>
