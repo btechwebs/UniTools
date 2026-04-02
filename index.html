@@ -80,7 +80,19 @@ firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
 // User ID placeholder (replace with Telegram ID in Mini App)
-const userId = "testUser123";
+
+
+let userId;
+
+if(window.Telegram.WebApp && Telegram.WebApp.initDataUnsafe){
+    userId = Telegram.WebApp.initDataUnsafe.user.id.toString();
+} else {
+    userId = "testUser123"; // fallback for testing
+}
+
+console.log("Telegram User ID:", userId);
+
+
 
 // ---------- Daily Reward ----------
 const claimBtn = document.getElementById("claimBtn");
