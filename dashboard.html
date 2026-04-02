@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tasks Dashboard</title>
+
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+<style>
+body { font-family: Arial; background: #121212; color: #fff; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+.card { background: #1e1e1e; border-radius: 12px; padding: 20px; width: 320px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.5); margin-bottom:20px;}
+.reward { font-size: 20px; margin: 10px 0; color: #00ff00;}
+button, select { padding: 10px 20px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+</style>
+</head>
+<body>
+
+<h1>Tasks Dashboard</h1>
+
+<!-- Daily Reward Card -->
+<div class="card">
+  <h2>Daily Reward</h2>
+  <div class="reward">+10 Points</div>
+  <button id="claimBtn">Loading...</button>
+</div>
+
+<!-- Watch Ad Card -->
+<div class="card">
+  <h2>Watch Ad</h2>
+  <div class="reward">+5 Points per Ad</div>
+  <button id="watchAdBtn">Loading...</button>
+  <div id="adInfo" style="margin-top:10px; font-size:14px;"></div>
+</div>
+
+<!-- Join Channel Card -->
+<div class="card">
+  <h2>Join Channel</h2>
+  <div class="reward">+20 Points</div>
+  <button id="joinBtn">Join Channel</button>
+</div>
+
+<!-- Visit Website Card -->
+<div class="card">
+  <h2>Visit Website</h2>
+  <div class="reward">+10 Points</div>
+  <button id="visitBtn">Visit Website</button>
+</div>
+
+<!-- Buy Coins Card -->
+<div class="card">
+  <h2>Buy Coins</h2>
+  <div class="reward">Get Coins Instantly</div>
+  <select id="coinSelect">
+    <option value="50">50 Coins</option>
+    <option value="100">100 Coins</option>
+    <option value="200">200 Coins</option>
+  </select>
+  <button id="buyBtn">Instructions</button>
+  <div id="buyInfo" style="margin-top:10px; font-size:14px;"></div>
+</div>
+
+<script>
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyCCRyB9d4k98q3gzuQ5q34HrT85NdrC0s8",
+  authDomain: "uni-uni-earn.firebaseapp.com",
+  databaseURL: "https://uni-uni-earn-default-rtdb.firebaseio.com",
+  projectId: "uni-uni-earn",
+  storageBucket: "uni-uni-earn.appspot.com",
+  messagingSenderId: "936966908219",
+  appId: "1:936966908219:web:5a6fae34a625473aa3ef1e"
+};
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+
+// User ID placeholder (replace with Telegram ID in Mini App)
+
+
+let userId;
+
+if(window.Telegram.WebApp && Telegram.WebApp.initDataUnsafe){
+    userId = Telegram.WebApp.initDataUnsafe.user.id.toString();
+} else {
+    userId = "testUser123"; // fallback for testing
+}
+
+console.log("Telegram User ID:", userId);
+
+
+
+// ---------- Daily Reward ----------
+const claimBtn = document.getElementById("claimBtn");
+const dailyReward = 10;
+function loadDaily() {
+  database.ref('users/' + userId).once('value').then(snapshot => {
+    let user = snapshot.val() || { points:0, daily:{ lastClaim:0 }, ads:{ count:0, lastAdTime:0 }, coins:0 };
+    const now = Date.now();
+    const lastClaim = (user.daily.lastClaim) || 0;
+    const hours24 = 24*60*60*1000;
+
+    if(now - lastClaim >= hours24){
+      claimBtn.disabled = false;
+      claimBtn.textContent = "Claim Now";
+      claimBtn.onclick = () => {
+        claimBtn.disabled = true;
+        database.ref('users/' + userId).update({ points:(user.points||0)+dailyReward, daily:{ lastClaim: now }})
+          .then(()=> claimBtn.textContent="Claimed ✅");
+      }
+    } else {
+      claimBtn.disabled = true;
+      const remaining = hours24 - (now - lastClaim);
+      const hrs = Math.floor(remaining/3600000);
+      const mins = Math.floor((remaining%3600000)/60000);
+      const secs = Math.floor((remaining%60000)/1000);
+      claimBtn.textContent = `Come back in ${hrs}h ${mins}m ${secs}s`;
+    }
+  });
+}
+
+// ---------- Watch Ad ----------
+const watchAdBtn = document.getElementById("watchAdBtn");
+const adInfo = document.getElementById("adInfo");
+const adReward = 5;
+const maxAds = 10;
+const adCooldown = 60*1000;
+
+function loadAd() {
+  database.ref('users/' + userId).once('value').then(snapshot => {
+    let user = snapshot.val() || { points:0, daily:{ lastClaim:0 }, ads:{ count:0, lastAdTime:0 }, coins:0 };
+    const now = Date.now();
+    let adsToday = user.ads.count || 0;
+    const lastAd = user.ads.lastAdTime || 0;
+
+    if(now - (user.ads.lastReset || 0) >= 24*60*60*1000){ 
+      adsToday=0; 
+      database.ref('users/' + userId+'/ads').update({count:0,lastReset:now}); 
+    }
+
+    if(adsToday >= maxAds){ watchAdBtn.disabled=true; watchAdBtn.textContent="Daily limit reached ✅"; adInfo.textContent=`Ads today: ${adsToday}/${maxAds}`; return; }
+
+    if(now - lastAd < adCooldown){ 
+      watchAdBtn.disabled=true; 
+      const remaining = adCooldown - (now - lastAd);
+      const secs = Math.floor(remaining/1000);
+      watchAdBtn.textContent=`Wait ${secs}s`;
+      adInfo.textContent=`Ads today: ${adsToday}/${maxAds}`;
+      return;
+    }
+
+    watchAdBtn.disabled=false;
+    watchAdBtn.textContent="Watch Ad Now";
+    watchAdBtn.onclick = () => {
+      database.ref('users/' + userId).update({ 
+        points:(user.points||0)+adReward, 
+        ads:{ count:adsToday+1, lastAdTime:now, lastReset:(user.ads.lastReset||now) } 
+      }).then(()=> loadAd());
+    }
+    adInfo.textContent=`Ads today: ${adsToday}/${maxAds}`;
+  });
+}
+
+// ---------- Join Channel ----------
+document.getElementById("joinBtn").onclick = () => {
+  database.ref('users/' + userId).once('value').then(snapshot=>{
+    let user = snapshot.val() || { points:0, coins:0 };
+    database.ref('users/' + userId).update({ points:(user.points||0)+20 });
+    alert("20 Points Added for Joining Channel ✅");
+  });
+}
+
+// ---------- Visit Website ----------
+document.getElementById("visitBtn").onclick = () => {
+  database.ref('users/' + userId).once('value').then(snapshot=>{
+    let user = snapshot.val() || { points:0, coins:0 };
+    database.ref('users/' + userId).update({ points:(user.points||0)+10 });
+    alert("10 Points Added for Visiting Website ✅");
+  });
+}
+
+// ---------- Buy Coins ----------
+const buyBtn = document.getElementById("buyBtn");
+const coinSelect = document.getElementById("coinSelect");
+const buyInfo = document.getElementById("buyInfo");
+
+buyBtn.onclick = () => {
+  const coins = parseInt(coinSelect.value);
+  buyInfo.innerHTML = `
+    <strong>Step 1:</strong> Send payment for ${coins} coins to:<br>
+    Account/Payment Info Here<br>
+    <strong>Step 2:</strong> After payment, contact admin with transaction ID.<br>
+    Admin will manually add ${coins} coins to your account.
+  `;
+}
+
+// Display current coins
+function loadCoins() {
+  database.ref('users/' + userId + '/coins').once('value').then(snapshot => {
+    const coins = snapshot.val() || 0;
+    buyInfo.innerHTML = `Your coins: ${coins}`;
+  });
+}
+
+// ---------- Initial Load ----------
+loadDaily();
+loadAd();
+loadCoins();
+setInterval(()=>{ loadDaily(); loadAd(); loadCoins(); }, 1000);
+</script>
+
+</body>
+</html>
