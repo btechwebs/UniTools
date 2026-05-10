@@ -1,22 +1,24 @@
 const TelegramBot = require("node-telegram-bot-api");
 const admin = require("firebase-admin");
 
-// Telegram token from Render env later
+// Telegram bot token from Render environment variables
 const token = process.env.BOT_TOKEN;
 
 const bot = new TelegramBot(token, { polling: true });
 
-// Firebase setup (we will fix key later)
+// Firebase setup (NO serviceAccountKey.json needed)
 admin.initializeApp({
-  credential: admin.credential.cert(require("./serviceAccountKey.json")),
   databaseURL: "https://crypto-earn-86252-default-rtdb.firebaseio.com"
 });
 
 const db = admin.database();
 
+// Listen to Telegram messages
 bot.on("message", async (msg) => {
   const text = msg.text;
+  if (!text) return;
 
+  // /approve USERID ACCOUNT BANK NAME
   if (text.startsWith("/approve")) {
     const parts = text.split(" ");
 
@@ -25,13 +27,18 @@ bot.on("message", async (msg) => {
     const bankName = parts[3];
     const accountName = parts.slice(4).join(" ");
 
-    await db.ref("depositRequests/" + userId).set({
-      status: "approved",
-      accountNumber,
-      bankName,
-      accountName
-    });
+    try {
+      await db.ref("depositRequests/" + userId).set({
+        status: "approved",
+        accountNumber,
+        bankName,
+        accountName
+      });
 
-    bot.sendMessage(msg.chat.id, "Sent to user ✅");
+      bot.sendMessage(msg.chat.id, "Sent to user ✅");
+    } catch (err) {
+      console.log(err);
+      bot.sendMessage(msg.chat.id, "Error saving data ❌");
+    }
   }
 });
